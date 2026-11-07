@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drama Diary</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9E1F7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dramas">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" id="touchIcon" href="">
+<style>
+:root{
+  --bg:#E9E1F7;--card:#F7F2FF;--accent:#7B5CC4;--a2:#B89CF0;--tert:#E8A7F0;
+  --text:#2E2347;--sub:#7C6F9B;--on:#fff;
+  --font:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);transition:background .35s,color .35s}
+body{min-height:100vh;min-height:100dvh;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+#app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 130px)}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:16px}
+.hdr h1{margin:0;font-size:32px;font-weight:800;letter-spacing:-.5px}
+.hdr span{font-size:28px}
+.seg{display:flex;gap:6px;padding:5px;background:var(--card);border-radius:999px;margin-bottom:18px}
+.seg button{flex:1;padding:10px 6px;border-radius:999px;font-weight:700;font-size:15px;color:var(--sub);transition:.25s}
+.seg button.on{background:var(--accent);color:var(--on)}
+.grid{display:flex;gap:12px;align-items:flex-start}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+.card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y;animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both;transition:transform .15s}
+.card.pressing{transform:scale(.96)}
+@keyframes pop{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:none}}
+.poster{position:relative;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 22%,transparent);border:1px solid rgba(255,255,255,.2);overflow:hidden}
+.poster b{font-size:54px;font-weight:900;color:rgba(255,255,255,.92);line-height:1}
+.poster i{font-style:normal;font-size:26px}
+.g0{background:linear-gradient(135deg,var(--accent),var(--a2))}
+.g1{background:linear-gradient(135deg,var(--a2),var(--tert))}
+.g2{background:linear-gradient(135deg,var(--tert),var(--accent))}
+.g3{background:linear-gradient(135deg,var(--accent),var(--tert))}
+.stamp{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;
+  background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#222}
+.card h3{margin:8px 4px 0;font-size:15px;font-weight:800;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card p{margin:3px 4px 0;font-size:12.5px;color:var(--sub);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.empty{text-align:center;padding-top:80px}
+.empty .big{font-size:60px}.empty h2{margin:8px 0 4px;font-size:20px}.empty p{margin:0;color:var(--sub);font-size:14px}
+
+/* floating capsule bar */
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:20;
+  display:flex;align-items:center;gap:26px;padding:10px 22px;border-radius:999px;
+  background:color-mix(in srgb,var(--card) 78%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.tab{width:56px;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--sub);transition:color .2s}
+.tab svg{width:23px;height:23px}
+.tab em{font-style:normal;font-size:10px;opacity:0;height:12px;line-height:12px}
+.tab.on{color:var(--accent)}.tab.on em{opacity:1}
+.plus{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on);display:grid;place-items:center;
+  box-shadow:0 6px 14px color-mix(in srgb,var(--accent) 50%,transparent);transition:transform .15s}
+.plus:active{transform:scale(.92)}.plus svg{width:22px;height:22px}
+
+/* sheets */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{width:100%;max-width:640px;background:var(--bg);border-radius:26px 26px 0 0;padding:10px 18px calc(env(safe-area-inset-bottom) + 18px);animation:up .3s cubic-bezier(.2,.9,.3,1)}
+@keyframes up{from{transform:translateY(100%)}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--sub);opacity:.4;margin:0 auto 12px}
+.sheet h2{margin:0 0 12px;font-size:20px;text-align:center}
+.sheet .t{margin:-6px 0 12px;text-align:center;color:var(--sub);font-size:14px}
+label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:12px 4px 6px}
+input[type=text],textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1.5px solid transparent;border-radius:16px;padding:13px 14px;outline:none;resize:none}
+input[type=text]:focus,textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;padding:14px;border-radius:16px;font-weight:800;background:var(--card)}
+.btn.pri{background:var(--accent);color:var(--on)}.btn:disabled{opacity:.4}
+.act{display:flex;align-items:center;gap:12px;width:100%;padding:15px 16px;border-radius:16px;background:var(--card);font-weight:700;margin-top:8px;text-align:left}
+.act.del{color:#e5484d}
+
+/* profile */
+.stats{display:flex;gap:12px;margin-bottom:22px}
+.stat{flex:1;padding:16px;border-radius:20px;background:var(--card)}
+.stat .e{font-size:24px}.stat .n{font-size:30px;font-weight:900;color:var(--accent)}.stat .l{font-size:13px;color:var(--sub)}
+h4{margin:22px 4px 10px;font-size:17px}
+.th{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:18px;background:var(--card);margin-bottom:10px;border:2px solid transparent;text-align:left;font-weight:700;font-size:16px}
+.th.on{border-color:var(--accent)}
+.sw{display:flex}.sw span{width:26px;height:26px;border-radius:50%;margin-right:-8px;border:1.5px solid color-mix(in srgb,var(--sub) 30%,transparent)}
+.th .nm{flex:1}.th .ck{color:var(--accent)}
+.note{font-size:12.5px;color:var(--sub);margin:8px 4px;line-height:1.45}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 100px);transform:translateX(-50%);z-index:80;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;animation:pop .25s}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav class="bar" id="bar"></nav>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* ---------- Themes ---------- */
+const THEMES = {
+  lavender:{name:'Pastel Lavender',e1:'🔮',e2:'🧸',
+    light:{bg:'#E9E1F7',card:'#F7F2FF',accent:'#7B5CC4',a2:'#B89CF0',t:'#E8A7F0',text:'#2E2347',sub:'#7C6F9B'},
+    dark :{bg:'#1B1528',card:'#2A2240',accent:'#B79BFF',a2:'#7B5CC4',t:'#E8A7F0',text:'#F1EBFF',sub:'#A99CC9'}},
+  sakura:{name:'Soft Sakura',e1:'🌸',e2:'🎀',
+    light:{bg:'#FBE6EC',card:'#FFF5F8',accent:'#E0678C',a2:'#F4A6BD',t:'#FFC9A8',text:'#4A2430',sub:'#9C6A78'},
+    dark :{bg:'#241419',card:'#36202A',accent:'#FF8FB0',a2:'#C2557A',t:'#FFC9A8',text:'#FFEAF0',sub:'#C79AA9'}},
+  cyberpunk:{name:'Cyberpunk Neon',e1:'⚡️',e2:'🔮',
+    light:{bg:'#E6EEFF',card:'#FFFFFF',accent:'#0097B2',a2:'#D81B7A',t:'#7B61FF',text:'#10163A',sub:'#5A64A0'},
+    dark :{bg:'#0B0F2B',card:'#161B45',accent:'#00E5FF',a2:'#FF2E97',t:'#7B61FF',text:'#E8F0FF',sub:'#8E9BD6'}},
+  matcha:{name:'Matcha Latte',e1:'🍵',e2:'🌿',
+    light:{bg:'#E3EBD6',card:'#F4F8EC',accent:'#5B8A3C',a2:'#A5C47F',t:'#E6D98A',text:'#22331A',sub:'#6B7F5C'},
+    dark :{bg:'#141C12',card:'#212C1D',accent:'#9CCB6A',a2:'#5B8A3C',t:'#E6D98A',text:'#E9F3DC',sub:'#9DB08B'}},
+  cafe:{name:'Cozy Cafe',e1:'☕️',e2:'🧸',
+    light:{bg:'#F1E6D6',card:'#FBF5EA',accent:'#8B5A3C',a2:'#C69C6D',t:'#E8C9A0',text:'#3B2618',sub:'#8A6D55'},
+    dark :{bg:'#1F1610',card:'#2E2219',accent:'#D1A074',a2:'#8B5A3C',t:'#E8C9A0',text:'#F5E9D8',sub:'#B79B80'}}
+};
+
+/* ---------- Persistent storage (localStorage) ---------- */
+const K = {dramas:'dd.dramas.v1', theme:'dd.theme.v1', appearance:'dd.appearance.v1'};
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ toast('⚠️ Could not save (storage blocked/full)'); return false; } }
+};
+const S = {
+  dramas: (() => { const d = store.get(K.dramas, []); return Array.isArray(d) ? d : []; })(),
+  theme: store.get(K.theme, 'lavender'),
+  appearance: store.get(K.appearance, 'system'),
+  tab: 'home',
+  next: false
+};
+if (!THEMES[S.theme]) S.theme = 'lavender';
+const saveDramas = () => store.set(K.dramas, S.dramas);
+
+/* ---------- Helpers ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const RATIOS = [1.25, 1.7, 1.45, 1.95, 1.55, 1.3];
+const ratio = (d) => RATIOS[hash(d.id) % RATIOS.length];
+const gradIdx = (d) => hash(d.id + 'g') % 4;
+const mq = matchMedia('(prefers-color-scheme: dark)');
+const scheme = () => S.appearance === 'system' ? (mq.matches ? 'dark' : 'light') : S.appearance;
+const T = () => THEMES[S.theme];
+
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
+}
+
+/* ---------- Theme application ---------- */
+function applyTheme(){
+  const sc = scheme(), p = T()[sc], r = document.documentElement.style;
+  r.setProperty('--bg', p.bg); r.setProperty('--card', p.card); r.setProperty('--accent', p.accent);
+  r.setProperty('--a2', p.a2); r.setProperty('--tert', p.t); r.setProperty('--text', p.text); r.setProperty('--sub', p.sub);
+  r.setProperty('--on', sc === 'dark' && S.theme !== 'cyberpunk' ? p.bg : '#fff');
+  document.documentElement.style.colorScheme = sc;
+  document.querySelector('meta[name=theme-color]').setAttribute('content', p.bg);
+  makeIcon(p);
+}
+mq.addEventListener && mq.addEventListener('change', () => { if (S.appearance === 'system'){ applyTheme(); render(); } });
+
+/* Home-screen icon (iOS needs a PNG apple-touch-icon): drawn on a canvas, matches the theme */
+function makeIcon(p){
+  try{
+    const c = document.createElement('canvas'); c.width = c.height = 180;
+    const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 180, 180);
+    g.addColorStop(0, p.a2); g.addColorStop(1, p.accent);
+    x.fillStyle = g; x.fillRect(0, 0, 180, 180);
+    x.font = '100px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(T().e1, 90, 98);
+    $('#touchIcon').href = c.toDataURL('image/png');
+  }catch(e){}
+}
+
+/* ---------- Rendering ---------- */
+const ICON = {
+  home:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2.5 11.2c-.5.4-.2 1.3.5 1.3H5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-7.5h2c.7 0 1-.9.5-1.3L12 3Z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.2"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1Z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg>'
+};
+
+function renderBar(){
+  const t = T();
+  $('#bar').innerHTML =
+    `<button class="tab ${S.tab==='home'?'on':''}" data-tab="home" aria-label="Home">${ICON.home}<em>${t.e1}</em></button>
+     <button class="plus" data-add aria-label="Add drama">${ICON.plus}</button>
+     <button class="tab ${S.tab==='profile'?'on':''}" data-tab="profile" aria-label="Profile">${ICON.user}<em>${t.e2}</em></button>`;
+}
+
+function cardHTML(d){
+  const t = T();
+  return `<article class="card" data-id="${esc(d.id)}">
+    <div class="poster g${gradIdx(d)}" style="aspect-ratio:1/${ratio(d)}">
+      <b>${esc((d.title.trim()[0] || '?').toUpperCase())}</b><i>${t.e1}</i>
+      <span class="stamp">${d.isWatchlist ? t.e2 : '✓'}</span>
+    </div>
+    <h3>${esc(d.title)}</h3>
+    ${d.note ? `<p>${t.e2} ${esc(d.note)}</p>` : ''}
+  </article>`;
+}
+
+function renderHome(){
+  const t = T();
+  const items = S.dramas.filter(d => !!d.isWatchlist === S.next).sort((a, b) => b.dateAdded - a.dateAdded);
+  const L = [], R = []; let lh = 0, rh = 0;               // greedy shortest-column packing → masonry
+  for (const d of items){ const h = ratio(d) + 0.4; if (lh <= rh){ L.push(d); lh += h; } else { R.push(d); rh += h; } }
+  const body = items.length
+    ? `<div class="grid"><div class="col">${L.map(cardHTML).join('')}</div><div class="col">${R.map(cardHTML).join('')}</div></div>`
+    : `<div class="empty"><div class="big">${S.next ? t.e2 : t.e1}</div><h2>${S.next ? 'Your queue is empty' : 'Nothing watched yet'}</h2><p>Tap the + button to add a drama.</p></div>`;
+  return `<div class="hdr"><h1>${t.e1} My Dramas</h1><span>${t.e2}</span></div>
+    <div class="seg">
+      <button class="${!S.next?'on':''}" data-seg="0">${t.e1} Watched</button>
+      <button class="${S.next?'on':''}" data-seg="1">${t.e2} Watch Next</button>
+    </div>${body}`;
+}
+
+function renderProfile(){
+  const t = T(), sc = scheme();
+  const w = S.dramas.filter(d => !d.isWatchlist).length, n = S.dramas.length - w;
+  const themes = Object.entries(THEMES).map(([k, v]) => {
+    const p = v[sc];
+    return `<button class="th ${k===S.theme?'on':''}" data-theme="${k}">
+      <span class="sw"><span style="background:${p.accent}"></span><span style="background:${p.a2}"></span><span style="background:${p.bg}"></span></span>
+      <span class="nm">${v.e1} ${v.name} ${v.e2}</span>${k===S.theme?'<span class="ck">✔︎</span>':''}</button>`;
+  }).join('');
+  const ap = ['system','light','dark'].map(a => `<button class="${S.appearance===a?'on':''}" data-appear="${a}">${a[0].toUpperCase()+a.slice(1)}</button>`).join('');
+  return `<div class="hdr"><h1>${t.e2} Profile</h1></div>
+    <div class="stats">
+      <div class="stat"><div class="e">${t.e1}</div><div class="n">${w}</div><div class="l">Watched</div></div>
+      <div class="stat"><div class="e">${t.e2}</div><div class="n">${n}</div><div class="l">Watch Next</div></div>
+    </div>
+    <h4>Theme</h4>${themes}
+    <h4>Appearance</h4><div class="seg">${ap}</div>
+    <h4>Backup</h4>
+    <div class="row" style="margin-top:0">
+      <button class="btn" data-export>⬇︎ Export</button><button class="btn" data-import>⬆︎ Import</button>
+    </div>
+    <p class="note">Your dramas live only on this device (local storage). Export a JSON backup now and then — clearing Safari/Chrome site data or deleting the app would erase them.</p>`;
+}
+
+function render(){
+  $('#app').innerHTML = S.tab === 'home' ? renderHome() : renderProfile();
+  renderBar();
+}
+
+/* ---------- Sheets ---------- */
+function closeSheet(){ document.querySelectorAll('.ov').forEach(o => o.remove()); }
+function openSheet(html){
+  closeSheet();
+  const o = document.createElement('div'); o.className = 'ov';
+  o.innerHTML = `<div class="sheet"><div class="grab"></div>${html}</div>`;
+  o.addEventListener('click', e => { if (e.target === o) closeSheet(); });
+  document.body.appendChild(o);
+  return o;
+}
+
+function openEditor(id){
+  const d = id ? S.dramas.find(x => x.id === id) : null, t = T();
+  const next = d ? !!d.isWatchlist : S.next;
+  const o = openSheet(`
+    <h2>${d ? 'Edit Drama' : 'New Drama'}</h2>
+    <label>Title</label><input type="text" id="fTitle" placeholder="e.g. Crash Landing on You" maxlength="120" autocomplete="off" value="${d ? esc(d.title) : ''}">
+    <label>Caption note ${t.e2}</label><textarea id="fNote" rows="2" maxlength="300" placeholder="How did it make you feel?">${d ? esc(d.note) : ''}</textarea>
+    <label>List</label>
+    <div class="seg" style="margin:0" id="fSeg">
+      <button type="button" data-v="0" class="${!next?'on':''}">${t.e1} Watched</button>
+      <button type="button" data-v="1" class="${next?'on':''}">${t.e2} Watch Next</button>
+    </div>
+    <div class="row"><button class="btn" id="fCancel">Cancel</button><button class="btn pri" id="fSave" ${d ? '' : 'disabled'}>Save</button></div>`);
+  let list = next;
+  const title = o.querySelector('#fTitle'), save = o.querySelector('#fSave');
+  title.addEventListener('input', () => save.disabled = !title.value.trim());
+  o.querySelector('#fSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    list = b.dataset.v === '1';
+    o.querySelectorAll('#fSeg button').forEach(x => x.classList.toggle('on', x === b));
+  });
+  o.querySelector('#fCancel').onclick = closeSheet;
+  save.onclick = () => {
+    const tt = title.value.trim(); if (!tt) return;
+    const note = o.querySelector('#fNote').value.trim();
+    if (d){ d.title = tt; d.note = note; d.isWatchlist = list; }
+    else S.dramas.push({id: uid(), title: tt, note, isWatchlist: list, dateAdded: Date.now()});
+    S.next = list; S.tab = 'home';
+    saveDramas(); closeSheet(); render();
+  };
+  if (!d) setTimeout(() => title.focus(), 250);
+}
+
+function openMenu(id){
+  const d = S.dramas.find(x => x.id === id); if (!d) return;
+  if (navigator.vibrate) navigator.vibrate(12);
+  const o = openSheet(`
+    <h2>${esc(d.title)}</h2>
+    <button class="act" data-a="edit">✏️ Edit</button>
+    <button class="act" data-a="move">${d.isWatchlist ? '✅ Move to Watched' : '🔖 Move to Watch Next'}</button>
+    <button class="act del" data-a="del">🗑️ Delete</button>
+    <button class="act" data-a="x" style="justify-content:center">Cancel</button>`);
+  o.addEventListener('click', e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const act = a.dataset.a;
+    if (act === 'edit'){ closeSheet(); openEditor(id); return; }
+    if (act === 'move'){ d.isWatchlist = !d.isWatchlist; saveDramas(); }
+    if (act === 'del'){ if (!confirm('Delete "' + d.title + '"?')) return; S.dramas = S.dramas.filter(x => x.id !== id); saveDramas(); }
+    closeSheet(); render();
+  });
+}
+
+/* ---------- Long-press / context menu on cards ---------- */
+let lpTimer = null, lpFired = false, lpX = 0, lpY = 0, lpEl = null;
+function lpCancel(){ clearTimeout(lpTimer); lpTimer = null; if (lpEl){ lpEl.classList.remove('pressing'); lpEl = null; } }
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('.card'); if (!c) return;
+  lpFired = false; lpX = e.clientX; lpY = e.clientY; lpEl = c; c.classList.add('pressing');
+  lpTimer = setTimeout(() => { lpFired = true; const id = c.dataset.id; lpCancel(); openMenu(id); }, 450);
+});
+document.addEventListener('pointermove', e => { if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 8) lpCancel(); });
+['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, lpCancel, true));
+document.addEventListener('contextmenu', e => {            // right-click on desktop
+  const c = e.target.closest('.card');
+  if (c){ e.preventDefault(); if (!lpFired) openMenu(c.dataset.id); }
+});
+
+/* ---------- Click delegation ---------- */
+document.addEventListener('click', e => {
+  const t = e.target;
+  const card = t.closest('.card');
+  if (card){ if (lpFired){ lpFired = false; return; } openEditor(card.dataset.id); return; }
+  const b = t.closest('button'); if (!b) return;
+  if (b.dataset.tab){ S.tab = b.dataset.tab; render(); window.scrollTo(0, 0); }
+  else if (b.hasAttribute('data-add')){ if (navigator.vibrate) navigator.vibrate(10); openEditor(null); }
+  else if (b.dataset.seg !== undefined){ S.next = b.dataset.seg === '1'; render(); }
+  else if (b.dataset.theme){ S.theme = b.dataset.theme; store.set(K.theme, S.theme); applyTheme(); render(); }
+  else if (b.dataset.appear){ S.appearance = b.dataset.appear; store.set(K.appearance, S.appearance); applyTheme(); render(); }
+  else if (b.hasAttribute('data-export')) exportData();
+  else if (b.hasAttribute('data-import')) $('#importFile').click();
+});
+
+/* ---------- Backup ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify({app:'drama-diary', theme:S.theme, appearance:S.appearance, dramas:S.dramas}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'drama-diary-backup.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    const list = Array.isArray(data) ? data : data.dramas;
+    if (!Array.isArray(list)) throw 0;
+    const have = new Set(S.dramas.map(d => d.id)); let added = 0;
+    for (const d of list){
+      if (!d || typeof d.title !== 'string' || !d.title.trim()) continue;
+      const id = typeof d.id === 'string' && d.id ? d.id : uid(); if (have.has(id)) continue;
+      S.dramas.push({id, title:d.title.trim(), note:String(d.note || ''), isWatchlist:!!d.isWatchlist, dateAdded:Number(d.dateAdded) || Date.now()});
+      have.add(id); added++;
+    }
+    saveDramas(); render(); toast(`Imported ${added} drama${added === 1 ? '' : 's'}`);
+  }catch(err){ toast('⚠️ Not a valid backup file'); }
+});
+
+/* ---------- Boot ---------- */
+applyTheme(); render();
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
