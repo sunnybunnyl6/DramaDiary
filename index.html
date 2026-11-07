@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drama Diary</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E9E1F7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dramas">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" id="touchIcon" href="">
+<style>
+/* Registered colour variables let the whole app cross-fade when the theme changes */
+@property --bg{syntax:'<color>';inherits:true;initial-value:#E9E1F7}
+@property --card{syntax:'<color>';inherits:true;initial-value:#F7F2FF}
+@property --accent{syntax:'<color>';inherits:true;initial-value:#6A49B5}
+@property --a2{syntax:'<color>';inherits:true;initial-value:#B89CF0}
+@property --tert{syntax:'<color>';inherits:true;initial-value:#E8A7F0}
+@property --text{syntax:'<color>';inherits:true;initial-value:#2E2347}
+@property --sub{syntax:'<color>';inherits:true;initial-value:#65587F}
+@property --on{syntax:'<color>';inherits:true;initial-value:#FFFFFF}
+:root{
+  --bg:#E9E1F7;--card:#F7F2FF;--accent:#6A49B5;--a2:#B89CF0;--tert:#E8A7F0;--text:#2E2347;--sub:#65587F;--on:#FFFFFF;
+  --font:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  color-scheme:light;
+  transition:--bg .45s,--card .45s,--accent .45s,--a2 .45s,--tert .45s,--text .45s,--sub .45s,--on .45s;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{min-height:100vh;min-height:100dvh;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#app{max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 130px)}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:0 4px;margin-bottom:16px}
+.hdr h1{margin:0;font-size:32px;font-weight:800;letter-spacing:-.5px}
+.hdr span{font-size:28px}
+
+/* segmented control */
+.seg{display:flex;gap:5px;padding:5px;background:var(--card);border-radius:999px;margin-bottom:14px}
+.seg button{flex:1;padding:10px 4px;border-radius:999px;font-weight:700;font-size:14px;color:var(--sub);transition:background .25s,color .25s;white-space:nowrap}
+.seg button.on{background:var(--accent);color:var(--on)}
+
+/* search + sort */
+.tools{display:flex;gap:8px;margin-bottom:12px}
+.search{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:0 14px}
+.search svg{width:17px;height:17px;flex:none;color:var(--sub)}
+.search input{flex:1;min-width:0;border:0;background:none;outline:none;font:inherit;font-size:16px;color:var(--text);padding:11px 0}
+.search input::placeholder{color:var(--sub);opacity:.85}
+.search:focus-within{box-shadow:0 0 0 2px var(--accent)}
+select{font:inherit;font-size:14px;font-weight:700;color:var(--text);background:var(--card);border:0;border-radius:999px;padding:0 12px;height:44px;max-width:112px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;margin:0 -14px 14px;padding:0 14px 2px;scrollbar-width:none}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;background:var(--card);color:var(--sub);font-size:13px;font-weight:700;border:1.5px solid transparent}
+.chip.on{background:color-mix(in srgb,var(--accent) 16%,var(--card));color:var(--accent);border-color:var(--accent)}
+.chip .x{font-size:15px;line-height:1;opacity:.8}
+
+/* masonry */
+.grid{display:flex;gap:12px;align-items:flex-start}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
+.card{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y;cursor:pointer;
+  animation:pop .42s cubic-bezier(.2,.9,.3,1.15) both;animation-delay:calc(var(--i,0)*35ms);transition:transform .15s}
+.card.pressing{transform:scale(.96)}
+@keyframes pop{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:none}}
+.poster{position:relative;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 22%,transparent);border:1px solid rgba(255,255,255,.2);overflow:hidden}
+.poster b{font-size:54px;font-weight:900;color:rgba(255,255,255,.94);line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.18)}
+.poster i{font-style:normal;font-size:26px}
+.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-touch-callout:none;animation:fadeimg .5s both}
+@keyframes fadeimg{from{opacity:0;filter:blur(8px)}}
+.g0{background:linear-gradient(135deg,var(--accent),var(--a2))}
+.g1{background:linear-gradient(135deg,var(--a2),var(--tert))}
+.g2{background:linear-gradient(135deg,var(--tert),var(--accent))}
+.g3{background:linear-gradient(135deg,var(--accent),var(--tert))}
+.stamp{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;
+  background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#222}
+.prog{position:absolute;left:10px;right:10px;bottom:10px;height:6px;border-radius:3px;background:rgba(255,255,255,.4);overflow:hidden}
+.prog span{display:block;height:100%;border-radius:3px;background:#fff;transition:width .4s}
+.card h3{margin:9px 4px 0;font-size:15px;font-weight:800;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.meta{margin:3px 4px 0;font-size:12.5px;color:var(--sub);line-height:1.35}
+.meta.stars{color:var(--accent);font-size:13px;letter-spacing:1px}
+.meta.stars .off{opacity:.3}
+.meta.ep{font-weight:700}
+.meta.note{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tg{display:flex;flex-wrap:wrap;gap:4px;margin:5px 4px 0}
+.tg span{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.empty{text-align:center;padding:70px 20px 0}
+.empty .big{font-size:60px}.empty h2{margin:8px 0 4px;font-size:20px}.empty p{margin:0;color:var(--sub);font-size:14px}
+
+/* floating capsule bar */
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:20;
+  display:flex;align-items:center;gap:26px;padding:10px 22px;border-radius:999px;
+  background:color-mix(in srgb,var(--card) 78%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.tab{position:relative;width:56px;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--sub);transition:color .2s}
+.tab svg{width:23px;height:23px}
+.tab em{font-style:normal;font-size:10px;opacity:0;height:12px;line-height:12px}
+.tab.on{color:var(--accent)}.tab.on em{opacity:1}
+.tab .dot{position:absolute;top:5px;right:12px;width:9px;height:9px;border-radius:50%;background:#e5484d;border:2px solid var(--card)}
+.plus{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on);display:grid;place-items:center;
+  box-shadow:0 6px 14px color-mix(in srgb,var(--accent) 50%,transparent);transition:transform .15s}
+.plus:active{transform:scale(.92)}.plus svg{width:22px;height:22px}
+
+/* sheets */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{width:100%;max-width:640px;max-height:92vh;max-height:92dvh;overflow-y:auto;background:var(--bg);border-radius:26px 26px 0 0;padding:10px 18px calc(env(safe-area-inset-bottom) + 14px);animation:up .3s cubic-bezier(.2,.9,.3,1)}
+@keyframes up{from{transform:translateY(100%)}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--sub);opacity:.4;margin:0 auto 12px}
+.sheet h2{margin:0 0 12px;font-size:20px;text-align:center}
+label,.lbl{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 4px 6px}
+input[type=text],input[type=number],textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1.5px solid transparent;border-radius:16px;padding:13px 14px;outline:none;resize:none}
+input[type=text]:focus,input[type=number]:focus,textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px;margin-top:18px}
+.row.sticky{position:sticky;bottom:calc(env(safe-area-inset-bottom) * -1 - 14px);background:var(--bg);padding:10px 0 4px}
+.btn{flex:1;padding:14px;border-radius:16px;font-weight:800;background:var(--card)}
+.btn.pri{background:var(--accent);color:var(--on)}.btn:disabled{opacity:.4}
+.act{display:flex;align-items:center;gap:12px;width:100%;padding:15px 16px;border-radius:16px;background:var(--card);font-weight:700;margin-top:8px;text-align:left}
+.act.del{color:#c62828}
+.pp{display:flex;gap:14px;align-items:center}
+.pv{width:84px;height:120px;flex:none;border-radius:18px;background:var(--card) center/cover no-repeat;display:grid;place-items:center;font-size:30px;border:1.5px dashed color-mix(in srgb,var(--sub) 45%,transparent)}
+.pb{flex:1;display:flex;flex-direction:column;gap:8px}.pb .btn{flex:none;padding:12px}
+.stin{display:flex;gap:2px}
+.stin button{font-size:34px;line-height:1;padding:2px 4px;color:color-mix(in srgb,var(--sub) 45%,transparent);transition:transform .15s,color .15s}
+.stin button.on{color:var(--accent)}.stin button:active{transform:scale(1.2)}
+.eprow{display:flex;align-items:center;gap:10px;color:var(--sub);font-weight:700}
+.eprow input{text-align:center}
+#fTagIn{margin-top:8px}
+
+/* profile */
+.stats{display:flex;gap:10px;margin-bottom:12px}
+.stat{flex:1;padding:14px;border-radius:20px;background:var(--card)}
+.stat .e{font-size:22px}.stat .n{font-size:28px;font-weight:900;color:var(--accent)}.stat .l{font-size:12.5px;color:var(--sub)}
+h4{margin:22px 4px 10px;font-size:17px}
+.th{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:18px;background:var(--card);margin-bottom:10px;border:2px solid transparent;text-align:left;font-weight:700;font-size:16px}
+.th.on{border-color:var(--accent)}
+.sw{display:flex}.sw span{width:26px;height:26px;border-radius:50%;margin-right:-8px;border:1.5px solid color-mix(in srgb,var(--sub) 30%,transparent)}
+.th .nm{flex:1}.th .ck{color:var(--accent)}
+.note{font-size:12.5px;color:var(--sub);margin:8px 4px;line-height:1.45}
+.warn{display:flex;gap:10px;align-items:flex-start;padding:14px;border-radius:18px;background:color-mix(in srgb,#e5484d 14%,var(--card));margin-bottom:12px;font-size:14px;line-height:1.4}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 98px);transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:14px;
+  max-width:calc(100vw - 28px);background:var(--text);color:var(--bg);padding:11px 16px;border-radius:999px;font-size:14px;font-weight:700;animation:pop .25s both;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast button{color:var(--a2);font-weight:900;padding:2px 4px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app" aria-live="off"></div>
+<nav class="bar" id="bar" aria-label="Main"></nav>
+<div id="toastHost" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* =====================================================================
+   Drama Diary v3
+   Storage: IndexedDB (dramas) + localStorage (small prefs). Auto-migrates
+   data saved by earlier versions (localStorage "dd.dramas.v1").
+   ===================================================================== */
+
+/* ---------- Themes ---------- */
+const THEMES = {
+  lavender:{name:'Pastel Lavender',e1:'🔮',e2:'🧸',
+    light:{bg:'#E9E1F7',card:'#F7F2FF',accent:'#6A49B5',a2:'#B89CF0',t:'#E8A7F0',text:'#2E2347',sub:'#65587F'},
+    dark :{bg:'#1B1528',card:'#2A2240',accent:'#B79BFF',a2:'#7B5CC4',t:'#E8A7F0',text:'#F1EBFF',sub:'#A99CC9'}},
+  sakura:{name:'Soft Sakura',e1:'🌸',e2:'🎀',
+    light:{bg:'#FBE6EC',card:'#FFF5F8',accent:'#C23B68',a2:'#F4A6BD',t:'#FFC9A8',text:'#4A2430',sub:'#82505F'},
+    dark :{bg:'#241419',card:'#36202A',accent:'#FF8FB0',a2:'#C2557A',t:'#FFC9A8',text:'#FFEAF0',sub:'#C79AA9'}},
+  cyberpunk:{name:'Cyberpunk Neon',e1:'⚡️',e2:'🔮',
+    light:{bg:'#E6EEFF',card:'#FFFFFF',accent:'#007A91',a2:'#D81B7A',t:'#7B61FF',text:'#10163A',sub:'#5A64A0'},
+    dark :{bg:'#0B0F2B',card:'#161B45',accent:'#00E5FF',a2:'#FF2E97',t:'#7B61FF',text:'#E8F0FF',sub:'#8E9BD6'}},
+  matcha:{name:'Matcha Latte',e1:'🍵',e2:'🌿',
+    light:{bg:'#E3EBD6',card:'#F4F8EC',accent:'#47722D',a2:'#A5C47F',t:'#E6D98A',text:'#22331A',sub:'#546646'},
+    dark :{bg:'#141C12',card:'#212C1D',accent:'#9CCB6A',a2:'#5B8A3C',t:'#E6D98A',text:'#E9F3DC',sub:'#9DB08B'}},
+  cafe:{name:'Cozy Cafe',e1:'☕️',e2:'🧸',
+    light:{bg:'#F1E6D6',card:'#FBF5EA',accent:'#8B5A3C',a2:'#C69C6D',t:'#E8C9A0',text:'#3B2618',sub:'#735943'},
+    dark :{bg:'#1F1610',card:'#2E2219',accent:'#D1A074',a2:'#8B5A3C',t:'#E8C9A0',text:'#F5E9D8',sub:'#B79B80'}}
+};
+const STATUS = {watched:'Watched', watching:'Watching', next:'Watch Next'};
+const GENRES = ['Romance','Comedy','Thriller','Fantasy','Historical','Mystery','Melodrama','Action','Slice of life','Medical'];
+
+/* ---------- Small helpers ---------- */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const lsGet = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
+const lsSet = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } };
+const buzz = (ms = 10) => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+const lum = (h) => { const n = parseInt(h.slice(1), 16); return [n>>16&255, n>>8&255, n&255].map(v => { v/=255; return v <= .03928 ? v/12.92 : ((v+.055)/1.055)**2.4; }).reduce((a, v, i) => a + v*[.2126,.7152,.0722][i], 0); };
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x,y)+.05)/(Math.min(x,y)+.05); };
+const bestOn = (accent) => contrast('#FFFFFF', accent) >= contrast('#101010', accent) ? '#FFFFFF' : '#101010';
+
+/* ---------- State ---------- */
+const S = {
+  dramas: [],
+  ready: false,
+  theme: lsGet('dd.theme.v1', 'lavender'),
+  appearance: lsGet('dd.appearance.v1', 'system'),
+  view: lsGet('dd.view', 'watched'),
+  sort: lsGet('dd.sort', 'new'),
+  tab: 'home', q: '', tag: ''
+};
+if (!THEMES[S.theme]) S.theme = 'lavender';
+if (!STATUS[S.view]) S.view = 'watched';
+if (!lsGet('dd.firstRun', 0)) lsSet('dd.firstRun', Date.now());
+
+/* ---------- Data normalisation (also migrates v1/v2 records) ---------- */
+function cleanTags(arr){
+  const out = [], seen = new Set();
+  for (const raw of arr){
+    const t = String(raw).replace(/\s+/g, ' ').trim().slice(0, 20);
+    if (t && !seen.has(t.toLowerCase())){ seen.add(t.toLowerCase()); out.push(t); }
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+function normalize(d){
+  if (!d || typeof d.title !== 'string' || !d.title.trim()) return null;
+  const num = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v)) || 0));
+  const status = STATUS[d.status] ? d.status : (d.isWatchlist ? 'next' : 'watched');
+  const poster = typeof d.poster === 'string' && d.poster.startsWith('data:image/') ? d.poster : '';
+  const eps = num(d.eps, 999); let seen = num(d.epsSeen, 999); if (eps && seen > eps) seen = eps;
+  return {
+    id: typeof d.id === 'string' && d.id ? d.id : uid(),
+    title: d.title.trim().slice(0, 120),
+    note: String(d.note || '').slice(0, 300),
+    status, rating: num(d.rating, 5),
+    tags: Array.isArray(d.tags) ? cleanTags(d.tags) : [],
+    eps, epsSeen: seen, poster,
+    pr: poster ? Math.min(2, Math.max(1.1, Number(d.pr) || 1.5)) : 0,
+    dateAdded: Number(d.dateAdded) || Date.now()
+  };
+}
+
+/* ---------- Storage layer: IndexedDB with localStorage fallback ---------- */
+let idb = null;
+function openDB(){
+  return new Promise((res) => {
+    try{
+      const r = indexedDB.open('drama-diary', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result);
+      r.onerror = r.onblocked = () => res(null);
+    }catch(e){ res(null); }
+  });
+}
+const idbGet = (k) => new Promise((res, rej) => { const q = idb.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+const idbSet = (k, v) => new Promise((res, rej) => { const tx = idb.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = () => res(); tx.onerror = tx.onabort = () => rej(tx.error); });
+
+async function loadData(){
+  idb = await openDB();
+  let list = null;
+  if (idb){ try{ list = await idbGet('dramas'); }catch(e){} }
+  if (!Array.isArray(list)){
+    const legacy = lsGet('dd.dramas.v1', []);                         // data from v1/v2
+    list = (Array.isArray(legacy) ? legacy : []).map(normalize).filter(Boolean);
+    if (idb){
+      try{
+        await idbSet('dramas', list);
+        const check = await idbGet('dramas');
+        if (Array.isArray(check) && check.length === list.length) localStorage.removeItem('dd.dramas.v1'); // free quota only after verified copy
+      }catch(e){}
+    }
+  } else list = list.map(normalize).filter(Boolean);
+  S.dramas = list;
+  S.ready = true;
+}
+
+let saveTimer = null;
+function commit(){ clearTimeout(saveTimer); saveTimer = setTimeout(flush, 120); }
+async function flush(){
+  clearTimeout(saveTimer);
+  if (!S.ready) return;
+  try{
+    if (idb) await idbSet('dramas', S.dramas);
+    else if (!lsSet('dd.dramas.v1', S.dramas)) throw 0;
+  }catch(e){ toast('⚠️ Could not save — storage is full or blocked'); }
+}
+addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+
+/* ---------- Toast (with optional Undo) ---------- */
+let toastTimer = null;
+function toast(msg, undo){
+  const host = $('#toastHost'); host.innerHTML = ''; clearTimeout(toastTimer);
+  const t = document.createElement('div'); t.className = 'toast';
+  const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
+  if (undo){
+    const b = document.createElement('button'); b.textContent = 'Undo';
+    b.onclick = () => { clearTimeout(toastTimer); host.innerHTML = ''; undo(); };
+    t.appendChild(b);
+  }
+  host.appendChild(t);
+  toastTimer = setTimeout(() => { host.innerHTML = ''; }, undo ? 6000 : 2600);
+}
+
+/* ---------- Theme ---------- */
+const mq = matchMedia('(prefers-color-scheme: dark)');
+const scheme = () => S.appearance === 'system' ? (mq.matches ? 'dark' : 'light') : S.appearance;
+const T = () => THEMES[S.theme];
+function applyTheme(){
+  const sc = scheme(), p = T()[sc], r = document.documentElement.style;
+  r.setProperty('--bg', p.bg); r.setProperty('--card', p.card); r.setProperty('--accent', p.accent);
+  r.setProperty('--a2', p.a2); r.setProperty('--tert', p.t); r.setProperty('--text', p.text); r.setProperty('--sub', p.sub);
+  r.setProperty('--on', bestOn(p.accent));
+  r.colorScheme = sc;
+  document.querySelector('meta[name=theme-color]').setAttribute('content', p.bg);
+  makeIcon(p);
+}
+mq.addEventListener && mq.addEventListener('change', () => { if (S.appearance === 'system'){ applyTheme(); render(); } });
+
+function makeIcon(p){                     // iOS needs a PNG apple-touch-icon; drawn to match the theme
+  try{
+    const c = document.createElement('canvas'); c.width = c.height = 180;
+    const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 180, 180);
+    g.addColorStop(0, p.a2); g.addColorStop(1, p.accent);
+    x.fillStyle = g; x.fillRect(0, 0, 180, 180);
+    x.font = '100px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(T().e1, 90, 98);
+    $('#touchIcon').href = c.toDataURL('image/png');
+  }catch(e){}
+}
+
+/* ---------- Layout helpers ---------- */
+const RATIOS = [1.25, 1.7, 1.45, 1.95, 1.55, 1.3];
+const ratio = (d) => d.poster && d.pr ? d.pr : RATIOS[hash(d.id) % RATIOS.length];
+const gradIdx = (d) => hash(d.id + 'g') % 4;
+const ICON = {
+  home:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 2.5 11.2c-.5.4-.2 1.3.5 1.3H5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-7.5h2c.7 0 1-.9.5-1.3L12 3Z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4.2"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1Z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
+};
+
+/* ---------- Filtering / sorting ---------- */
+function visible(){
+  const q = S.q.trim().toLowerCase();
+  let list = S.dramas.filter(d => d.status === S.view);
+  if (S.tag) list = list.filter(d => d.tags.some(t => t.toLowerCase() === S.tag.toLowerCase()));
+  if (q) list = list.filter(d => (d.title + ' ' + d.note + ' ' + d.tags.join(' ')).toLowerCase().includes(q));
+  const by = {
+    new:    (a, b) => b.dateAdded - a.dateAdded,
+    old:    (a, b) => a.dateAdded - b.dateAdded,
+    az:     (a, b) => a.title.localeCompare(b.title, undefined, {sensitivity:'base'}),
+    rating: (a, b) => b.rating - a.rating || b.dateAdded - a.dateAdded
+  }[S.sort] || ((a, b) => b.dateAdded - a.dateAdded);
+  return list.sort(by);
+}
+function topTags(){
+  const m = new Map();
+  for (const d of S.dramas) for (const t of d.tags){ const k = t.toLowerCase(); const e = m.get(k) || {name:t, n:0}; e.n++; m.set(k, e); }
+  return [...m.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 14).map(e => e.name);
+}
+
+/* ---------- Rendering ---------- */
+function renderBar(){
+  const t = T();
+  $('#bar').innerHTML =
+    `<button class="tab ${S.tab==='home'?'on':''}" data-tab="home" aria-label="Home" ${S.tab==='home'?'aria-current="page"':''}>${ICON.home}<em aria-hidden="true">${t.e1}</em></button>
+     <button class="plus" data-add aria-label="Add drama">${ICON.plus}</button>
+     <button class="tab ${S.tab==='profile'?'on':''}" data-tab="profile" aria-label="Profile${backupDue()?' (backup needed)':''}" ${S.tab==='profile'?'aria-current="page"':''}>${ICON.user}<em aria-hidden="true">${t.e2}</em>${backupDue()?'<span class="dot"></span>':''}</button>`;
+}
+
+function stars(n){ return '★'.repeat(n) + `<span class="off">${'★'.repeat(5 - n)}</span>`; }
+
+function cardHTML(d, i){
+  const t = T(), has = !!d.poster;
+  const stamp = d.status === 'watched' ? '✓' : d.status === 'watching' ? '▶︎' : t.e2;
+  const prog = d.status === 'watching' && d.eps > 0 ? Math.round(d.epsSeen / d.eps * 100) : null;
+  return `<article class="card" tabindex="0" role="button" data-id="${esc(d.id)}" style="--i:${Math.min(i, 12)}"
+      aria-label="${esc(d.title)}, ${STATUS[d.status]}${d.rating ? ', rated ' + d.rating + ' of 5' : ''}. Press Enter to edit, long-press for more options.">
+    <div class="poster g${gradIdx(d)}" style="aspect-ratio:1/${ratio(d)}">
+      ${has ? `<img src="${d.poster}" alt="" draggable="false" decoding="async">` : `<b>${esc((d.title.trim()[0] || '?').toUpperCase())}</b><i>${t.e1}</i>`}
+      <span class="stamp" aria-hidden="true">${stamp}</span>
+      ${prog !== null ? `<div class="prog" role="progressbar" aria-label="Episodes watched" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${prog}"><span style="width:${prog}%"></span></div>` : ''}
+    </div>
+    <h3>${esc(d.title)}</h3>
+    ${d.rating ? `<div class="meta stars" aria-hidden="true">${stars(d.rating)}</div>` : ''}
+    ${d.status === 'watching' && d.eps ? `<div class="meta ep">Ep ${d.epsSeen} / ${d.eps}</div>` : (d.status === 'watching' && d.epsSeen ? `<div class="meta ep">Ep ${d.epsSeen}</div>` : '')}
+    ${d.tags.length ? `<div class="tg">${d.tags.slice(0, 2).map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+    ${d.note ? `<div class="meta note">${t.e2} ${esc(d.note)}</div>` : ''}
+  </article>`;
+}
+
+function emptyHTML(){
+  const t = T();
+  if (S.q.trim() || S.tag)
+    return `<div class="empty"><div class="big">🔍</div><h2>No matches</h2><p>Try a different search or clear the filter.</p></div>`;
+  const m = {
+    watched:  [t.e1, 'Nothing watched yet', 'Tap + to log your first drama.'],
+    watching: ['▶︎', 'Not watching anything', 'Start one from your queue or tap +.'],
+    next:     [t.e2, 'Your queue is empty', 'Add dramas you want to watch next.']
+  }[S.view];
+  return `<div class="empty"><div class="big">${m[0]}</div><h2>${m[1]}</h2><p>${m[2]}</p></div>`;
+}
+
+function gridHTML(){
+  if (!S.ready) return '';
+  const items = visible();
+  if (!items.length) return emptyHTML();
+  const L = [], R = []; let lh = 0, rh = 0;                 // greedy shortest-column packing → masonry
+  items.forEach((d, i) => { const h = ratio(d) + 0.5; (lh <= rh ? (L.push(cardHTML(d, i)), lh += h) : (R.push(cardHTML(d, i)), rh += h)); });
+  return `<div class="grid"><div class="col">${L.join('')}</div><div class="col">${R.join('')}</div></div>`;
+}
+function renderGrid(){ const g = $('#gridWrap'); if (g) g.innerHTML = gridHTML(); }
+
+function renderHome(){
+  const t = T();
+  const segs = [['watched', `${t.e1} Watched`], ['watching', '▶︎ Watching'], ['next', `${t.e2} Next`]];
+  const tags = topTags();
+  const sorts = [['new','Newest'],['old','Oldest'],['az','A–Z'],['rating','Top rated']];
+  return `<div class="hdr"><h1>${t.e1} My Dramas</h1><span aria-hidden="true">${t.e2}</span></div>
+    <div class="seg" role="group" aria-label="List">${segs.map(([k, l]) => `<button data-view="${k}" aria-pressed="${S.view===k}" class="${S.view===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="tools">
+      <label class="search"><span class="sr">Search dramas</span>${ICON.search}<input type="search" id="q" placeholder="Search title, note, genre" value="${esc(S.q)}" enterkeyhint="search" autocomplete="off"></label>
+      <select id="sort" aria-label="Sort by">${sorts.map(([k, l]) => `<option value="${k}" ${S.sort===k?'selected':''}>${l}</option>`).join('')}</select>
+    </div>
+    ${tags.length ? `<div class="chips scroll" role="group" aria-label="Filter by genre">${tags.map(x => `<button class="chip ${S.tag.toLowerCase()===x.toLowerCase()?'on':''}" data-tagf="${esc(x)}" aria-pressed="${S.tag.toLowerCase()===x.toLowerCase()}">${esc(x)}</button>`).join('')}</div>` : ''}
+    <div id="gridWrap">${gridHTML()}</div>`;
+}
+
+/* backup reminder */
+function backupDue(){
+  if (!S.dramas.length) return false;
+  const last = Number(lsGet('dd.lastBackup', 0)) || Number(lsGet('dd.firstRun', Date.now()));
+  return Date.now() - last > 30 * 864e5;
+}
+
+function renderProfile(){
+  const t = T(), sc = scheme();
+  const c = (k) => S.dramas.filter(d => d.status === k).length;
+  const rated = S.dramas.filter(d => d.rating > 0);
+  const avg = rated.length ? (rated.reduce((a, d) => a + d.rating, 0) / rated.length).toFixed(1) : '–';
+  const last = Number(lsGet('dd.lastBackup', 0));
+  const themes = Object.entries(THEMES).map(([k, v]) => {
+    const p = v[sc];
+    return `<button class="th ${k===S.theme?'on':''}" data-theme="${k}" aria-pressed="${k===S.theme}">
+      <span class="sw" aria-hidden="true"><span style="background:${p.accent}"></span><span style="background:${p.a2}"></span><span style="background:${p.bg}"></span></span>
+      <span class="nm">${v.e1} ${v.name} ${v.e2}</span>${k===S.theme?'<span class="ck" aria-hidden="true">✔︎</span>':''}</button>`;
+  }).join('');
+  const ap = ['system','light','dark'].map(a => `<button data-appear="${a}" aria-pressed="${S.appearance===a}" class="${S.appearance===a?'on':''}">${a[0].toUpperCase()+a.slice(1)}</button>`).join('');
+  return `<div class="hdr"><h1>${t.e2} Profile</h1></div>
+    <div class="stats">
+      <div class="stat"><div class="e">${t.e1}</div><div class="n">${c('watched')}</div><div class="l">Watched</div></div>
+      <div class="stat"><div class="e">▶︎</div><div class="n">${c('watching')}</div><div class="l">Watching</div></div>
+      <div class="stat"><div class="e">${t.e2}</div><div class="n">${c('next')}</div><div class="l">Watch Next</div></div>
+    </div>
+    <div class="stat" style="margin-bottom:6px"><div class="l">Average rating</div><div class="n">${avg}${rated.length ? ' ★' : ''}</div></div>
+    <h4>Theme</h4>${themes}
+    <h4>Appearance</h4><div class="seg" role="group" aria-label="Appearance">${ap}</div>
+    <h4>Backup</h4>
+    ${backupDue() ? `<div class="warn" role="alert"><span aria-hidden="true">⚠️</span><span>It's been over 30 days since your last backup. Export a copy so your dramas can't be lost.</span></div>` : ''}
+    <div class="row" style="margin-top:0">
+      <button class="btn" data-export>⬇︎ Export</button><button class="btn" data-import>⬆︎ Import</button>
+    </div>
+    <p class="note">${last ? 'Last backup: ' + new Date(last).toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'}) : 'No backup yet.'} <span id="stor"></span><br>
+    Everything is stored only on this device. Clearing website data or deleting the app would erase it, so export now and then.</p>`;
+}
+
+function render(){
+  $('#app').innerHTML = S.tab === 'home' ? renderHome() : renderProfile();
+  renderBar();
+  if (S.tab === 'profile' && navigator.storage && navigator.storage.estimate)
+    navigator.storage.estimate().then(e => { const el = $('#stor'); if (el && e.usage) el.textContent = `Storage used: ${(e.usage / 1048576).toFixed(1)} MB.`; }).catch(() => {});
+}
+
+/* ---------- Sheets ---------- */
+let lastFocus = null;
+function closeSheet(){
+  const had = document.querySelector('.ov');
+  document.querySelectorAll('.ov').forEach(o => o.remove());
+  if (had && lastFocus && document.contains(lastFocus)) { try{ lastFocus.focus({preventScroll:true}); }catch(e){} }
+}
+function openSheet(html, label){
+  if (!document.querySelector('.ov')) lastFocus = document.activeElement;
+  document.querySelectorAll('.ov').forEach(o => o.remove());
+  const o = document.createElement('div'); o.className = 'ov';
+  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(label)}"><div class="grab"></div>${html}</div>`;
+  o.addEventListener('click', e => { if (e.target === o) closeSheet(); });
+  document.body.appendChild(o);
+  return o;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.querySelector('.ov')) closeSheet();
+  const c = e.target.classList && e.target.classList.contains('card') ? e.target : null;
+  if (c && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); openEditor(c.dataset.id); }
+});
+
+/* Resize + centre-crop a picked photo to a compact JPEG */
+function processPoster(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      try{
+        const sw = img.naturalWidth, sh = img.naturalHeight;
+        const r = Math.min(2, Math.max(1.1, sh / sw));
+        let cw = sw, ch = sh, cx = 0, cy = 0;
+        if (sh / sw > r){ ch = sw * r; cy = (sh - ch) / 2; } else { cw = sh / r; cx = (sw - cw) / 2; }
+        const w = Math.min(480, Math.round(cw)), h = Math.round(w * r);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, cx, cy, cw, ch, 0, 0, w, h);
+        resolve({data: c.toDataURL('image/jpeg', 0.8), ratio: +r.toFixed(3)});
+      }catch(e){ reject(e); } finally { URL.revokeObjectURL(url); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+
+function openEditor(id){
+  const d = id ? S.dramas.find(x => x.id === id) : null, t = T();
+  let poster = d ? d.poster : '', pr = d ? d.pr : 0;
+  let status = d ? d.status : S.view, rating = d ? d.rating : 0;
+  let tags = d ? [...d.tags] : [];
+  const o = openSheet(`
+    <h2>${d ? 'Edit Drama' : 'New Drama'}</h2>
+    <div class="pp">
+      <div class="pv" id="pPrev" role="img" aria-label="Poster preview"></div>
+      <div class="pb">
+        <button type="button" class="btn" id="pPick"></button>
+        <button type="button" class="btn" id="pDel" hidden>Remove poster</button>
+      </div>
+    </div>
+    <input type="file" id="pFile" accept="image/*" hidden>
+    <label for="fTitle">Title</label>
+    <input type="text" id="fTitle" placeholder="e.g. Crash Landing on You" maxlength="120" autocomplete="off" value="${d ? esc(d.title) : ''}">
+    <label for="fNote">Caption note ${t.e2}</label>
+    <textarea id="fNote" rows="2" maxlength="300" placeholder="How did it make you feel?">${d ? esc(d.note) : ''}</textarea>
+    <div class="lbl">Status</div>
+    <div class="seg" style="margin:0" id="fSeg" role="group" aria-label="Status"></div>
+    <div class="lbl">Rating</div>
+    <div class="stin" id="fStars" role="group" aria-label="Rating"></div>
+    <label for="fTagIn">Genres</label>
+    <div class="chips" id="fTags"></div>
+    <input type="text" id="fTagIn" placeholder="Add a genre and press Enter" maxlength="20" autocomplete="off" enterkeyhint="done">
+    <div class="chips" id="fSug" style="margin-top:8px" role="group" aria-label="Suggested genres"></div>
+    <div class="lbl">Episodes</div>
+    <div class="eprow">
+      <input type="number" id="fSeen" inputmode="numeric" min="0" max="999" placeholder="Watched" aria-label="Episodes watched" value="${d && d.epsSeen ? d.epsSeen : ''}">
+      <span>of</span>
+      <input type="number" id="fTotal" inputmode="numeric" min="0" max="999" placeholder="Total" aria-label="Total episodes" value="${d && d.eps ? d.eps : ''}">
+    </div>
+    <div class="row sticky"><button class="btn" id="fCancel">Cancel</button><button class="btn pri" id="fSave" ${d ? '' : 'disabled'}>Save</button></div>`,
+    d ? 'Edit drama' : 'New drama');
+
+  const q = (s) => o.querySelector(s);
+  const title = q('#fTitle'), save = q('#fSave'), tagIn = q('#fTagIn');
+
+  /* poster */
+  const showPoster = () => {
+    const pv = q('#pPrev');
+    pv.style.backgroundImage = poster ? `url(${poster})` : ''; pv.textContent = poster ? '' : t.e1;
+    q('#pPick').textContent = poster ? '🔄 Change poster' : '🖼️ Add poster';
+    q('#pDel').hidden = !poster;
+  };
+  showPoster();
+  q('#pPick').onclick = () => q('#pFile').click();
+  q('#pDel').onclick = () => { poster = ''; pr = 0; showPoster(); };
+  q('#pFile').onchange = async (e) => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try{ const r = await processPoster(f); poster = r.data; pr = r.ratio; showPoster(); }
+    catch(err){ toast('⚠️ Could not read that image'); }
+  };
+
+  /* status */
+  const drawSeg = () => {
+    q('#fSeg').innerHTML = [['watched', `${t.e1} Watched`], ['watching', '▶︎ Watching'], ['next', `${t.e2} Next`]]
+      .map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${status===k}" class="${status===k?'on':''}">${l}</button>`).join('');
+  };
+  drawSeg();
+  q('#fSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ status = b.dataset.v; drawSeg(); } });
+
+  /* rating (tap the same star again to clear) */
+  const drawStars = () => {
+    q('#fStars').innerHTML = [1, 2, 3, 4, 5].map(n =>
+      `<button type="button" data-n="${n}" class="${n <= rating ? 'on' : ''}" aria-pressed="${n === rating}" aria-label="${n} star${n > 1 ? 's' : ''}">★</button>`).join('');
+  };
+  drawStars();
+  q('#fStars').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ const n = +b.dataset.n; rating = rating === n ? 0 : n; drawStars(); buzz(8); } });
+
+  /* tags */
+  const drawTags = () => {
+    q('#fTags').innerHTML = tags.map((x, i) => `<button type="button" class="chip on" data-rm="${i}" aria-label="Remove ${esc(x)}">${esc(x)} <span class="x" aria-hidden="true">×</span></button>`).join('');
+    q('#fSug').innerHTML = GENRES.filter(g => !tags.some(x => x.toLowerCase() === g.toLowerCase()))
+      .map(g => `<button type="button" class="chip" data-sg="${esc(g)}">+ ${esc(g)}</button>`).join('');
+  };
+  const addTag = (raw) => {
+    const next = cleanTags([...tags, raw]);
+    if (next.length === tags.length && raw.trim() && tags.length >= 8) toast('Up to 8 genres');
+    tags = next; drawTags();
+  };
+  drawTags();
+  o.addEventListener('click', e => {
+    const rm = e.target.closest('[data-rm]'); if (rm){ tags.splice(+rm.dataset.rm, 1); drawTags(); return; }
+    const sg = e.target.closest('[data-sg]'); if (sg){ addTag(sg.dataset.sg); }
+  });
+  tagIn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ','){ e.preventDefault(); if (tagIn.value.trim()) addTag(tagIn.value); tagIn.value = ''; }
+    else if (e.key === 'Backspace' && !tagIn.value && tags.length){ tags.pop(); drawTags(); }
+  });
+  tagIn.addEventListener('blur', () => { if (tagIn.value.trim()){ addTag(tagIn.value); tagIn.value = ''; } });
+
+  /* save */
+  title.addEventListener('input', () => save.disabled = !title.value.trim());
+  q('#fCancel').onclick = closeSheet;
+  save.onclick = () => {
+    const tt = title.value.trim(); if (!tt) return;
+    if (tagIn.value.trim()) addTag(tagIn.value);
+    const num = (v) => Math.max(0, Math.min(999, Math.floor(Number(v)) || 0));
+    const eps = num(q('#fTotal').value); let seen = num(q('#fSeen').value);
+    if (eps && (seen > eps || status === 'watched')) seen = eps;
+    const rec = {title: tt, note: q('#fNote').value.trim(), status, rating, tags: [...tags], eps, epsSeen: seen, poster, pr};
+    if (d) Object.assign(d, rec);
+    else S.dramas.push({id: uid(), dateAdded: Date.now(), ...rec});
+    S.view = status; lsSet('dd.view', S.view); S.tab = 'home'; S.q = ''; S.tag = '';
+    commit(); closeSheet(); render(); buzz(12);
+  };
+  if (!d) setTimeout(() => title.focus(), 280);
+}
+
+/* ---------- Actions with undo ---------- */
+function setStatus(d, st){
+  const prev = {status: d.status, epsSeen: d.epsSeen};
+  d.status = st; if (st === 'watched' && d.eps) d.epsSeen = d.eps;
+  commit(); render();
+  toast(`Moved to ${STATUS[st]}`, () => { Object.assign(d, prev); commit(); render(); });
+}
+function bumpEpisode(d){
+  const prev = d.epsSeen;
+  d.epsSeen = d.eps ? Math.min(d.eps, d.epsSeen + 1) : d.epsSeen + 1;
+  commit(); render();
+  const done = d.eps && d.epsSeen >= d.eps;
+  toast(done ? '🎉 That was the last episode!' : `Episode ${d.epsSeen}${d.eps ? ' / ' + d.eps : ''} ✓`, () => { d.epsSeen = prev; commit(); render(); });
+}
+function removeDrama(id){
+  const i = S.dramas.findIndex(x => x.id === id); if (i < 0) return;
+  const [d] = S.dramas.splice(i, 1);
+  commit(); render();
+  toast(`Deleted “${d.title.length > 24 ? d.title.slice(0, 24) + '…' : d.title}”`, () => {
+    S.dramas.splice(Math.min(i, S.dramas.length), 0, d); commit(); render();
+  });
+}
+
+function openMenu(id){
+  const d = S.dramas.find(x => x.id === id); if (!d) return;
+  buzz(12);
+  const others = Object.keys(STATUS).filter(k => k !== d.status);
+  const mv = { watched:['✅', 'Move to Watched'], watching:['▶︎', 'Move to Watching'], next:['🔖', 'Move to Watch Next'] };
+  const o = openSheet(`
+    <h2>${esc(d.title)}</h2>
+    <button class="act" data-a="edit">✏️ Edit</button>
+    ${d.status === 'watching' ? `<button class="act" data-a="ep">⏭️ +1 episode${d.eps ? ` (${d.epsSeen}/${d.eps})` : ''}</button>` : ''}
+    ${others.map(k => `<button class="act" data-a="mv-${k}">${mv[k][0]} ${mv[k][1]}</button>`).join('')}
+    <button class="act del" data-a="del">🗑️ Delete</button>
+    <button class="act" data-a="x" style="justify-content:center">Cancel</button>`, 'Options for ' + d.title);
+  o.addEventListener('click', e => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const act = a.dataset.a; closeSheet();
+    if (act === 'edit') openEditor(id);
+    else if (act === 'ep') bumpEpisode(d);
+    else if (act.startsWith('mv-')) setStatus(d, act.slice(3));
+    else if (act === 'del') removeDrama(id);
+  });
+}
+
+/* ---------- Long-press / context menu on cards ---------- */
+let lpTimer = null, lpFired = false, lpX = 0, lpY = 0, lpEl = null;
+function lpCancel(){ clearTimeout(lpTimer); lpTimer = null; if (lpEl){ lpEl.classList.remove('pressing'); lpEl = null; } }
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('.card'); if (!c) return;
+  lpFired = false; lpX = e.clientX; lpY = e.clientY; lpEl = c; c.classList.add('pressing');
+  lpTimer = setTimeout(() => { lpFired = true; const id = c.dataset.id; lpCancel(); openMenu(id); }, 450);
+});
+document.addEventListener('pointermove', e => { if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 8) lpCancel(); });
+['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, lpCancel, true));
+document.addEventListener('contextmenu', e => {
+  const c = e.target.closest('.card');
+  if (c){ e.preventDefault(); if (!lpFired) openMenu(c.dataset.id); }
+});
+
+/* ---------- Click / input delegation ---------- */
+document.addEventListener('click', e => {
+  const t = e.target;
+  const card = t.closest('.card');
+  if (card){ if (lpFired){ lpFired = false; return; } openEditor(card.dataset.id); return; }
+  const b = t.closest('button'); if (!b) return;
+  if (b.dataset.tab){ S.tab = b.dataset.tab; render(); window.scrollTo(0, 0); }
+  else if (b.hasAttribute('data-add')){ buzz(10); openEditor(null); }
+  else if (b.dataset.view){ S.view = b.dataset.view; lsSet('dd.view', S.view); render(); }
+  else if (b.dataset.tagf !== undefined){ S.tag = S.tag.toLowerCase() === b.dataset.tagf.toLowerCase() ? '' : b.dataset.tagf; render(); }
+  else if (b.dataset.theme){ S.theme = b.dataset.theme; lsSet('dd.theme.v1', S.theme); applyTheme(); render(); }
+  else if (b.dataset.appear){ S.appearance = b.dataset.appear; lsSet('dd.appearance.v1', S.appearance); applyTheme(); render(); }
+  else if (b.hasAttribute('data-export')) exportData();
+  else if (b.hasAttribute('data-import')) $('#importFile').click();
+});
+document.addEventListener('input', e => { if (e.target.id === 'q'){ S.q = e.target.value; renderGrid(); } });
+document.addEventListener('change', e => { if (e.target.id === 'sort'){ S.sort = e.target.value; lsSet('dd.sort', S.sort); renderGrid(); } });
+
+/* ---------- Backup ---------- */
+async function exportData(){
+  await flush();
+  const out = {app:'drama-diary', version:3, exportedAt:new Date().toISOString(), theme:S.theme, appearance:S.appearance,
+    dramas:S.dramas.map(d => ({...d, isWatchlist: d.status === 'next'}))};
+  const blob = new Blob([JSON.stringify(out)], {type:'application/json'});
+  const name = 'drama-diary-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  const done = () => { lsSet('dd.lastBackup', Date.now()); render(); toast('✅ Backup saved'); };
+  try{
+    const file = new File([blob], name, {type:'application/json'});
+    if (navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:'Drama Diary backup'}); done(); return; }
+  }catch(err){ if (err && err.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  done();
+}
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    const list = Array.isArray(data) ? data : data.dramas;
+    if (!Array.isArray(list)) throw 0;
+    const have = new Set(S.dramas.map(d => d.id)); let added = 0;
+    for (const raw of list){
+      const d = normalize(raw); if (!d || have.has(d.id)) continue;
+      S.dramas.push(d); have.add(d.id); added++;
+    }
+    await (commit(), flush()); render(); toast(`Imported ${added} drama${added === 1 ? '' : 's'}`);
+  }catch(err){ toast('⚠️ Not a valid backup file'); }
+});
+
+/* ---------- Boot ---------- */
+applyTheme(); render();
+loadData().then(() => {
+  render();
+  const p = new URLSearchParams(location.search);
+  if (p.has('add')){ history.replaceState(null, '', location.pathname); openEditor(null); }   // home-screen shortcut
+}).catch(() => { S.ready = true; render(); });
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+if ('serviceWorker' in navigator){
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) toast('✨ Updated — reopen the app to use the new version'); });
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
